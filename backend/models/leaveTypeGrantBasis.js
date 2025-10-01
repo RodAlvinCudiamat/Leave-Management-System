@@ -20,10 +20,7 @@ class LeaveTypeGrantBasis {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [leave_type_grant_basis] = await pool.query(`
-                SELECT * 
-                FROM leave_type_grant_basis
-            `);
+            const [leave_type_grant_basis] = await pool.query(`SELECT * FROM leave_type_grant_basis`);
 
             if(leave_type_grant_basis.length){
                 response_data.status = true;

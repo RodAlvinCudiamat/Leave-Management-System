@@ -6,17 +6,6 @@ import { pool } from './db.js';
  */
 class Role {
     /**
-     * Constructor for the Role class.
-     *
-     * @constructor
-     * @param {number|null} id - The unique ID of the role (null for new records).
-     * @param {string|null} title - The title of the role.
-     */
-    constructor(id = null, title = null) {
-        this.id = id;
-        this.title = title;
-    }
-    /**
      * Fetch all roles.
      * Retrieves all role records from the database.
      * 
@@ -31,9 +20,7 @@ class Role {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [roles] = await pool.query(`
-                SELECT * 
-                FROM employee_roles`);
+            const [roles] = await pool.query(`SELECT * FROM employee_roles`);
 
             if(roles.length){
                 response_data.status = true;

@@ -46,7 +46,7 @@ export default function Dashboard() {
 
     const fetchSubmittedLeaves = async () => {
         try{
-            const res = await api.get("/leave_applications/applications");
+            const res = await api.get(`/leave_applications/applications/employees`);
             if(res.data.success){
                 const submittedApplications = res.data.result.filter(
                     (app) => app.is_pending === 1
@@ -198,7 +198,7 @@ export default function Dashboard() {
             <nav style={{ display: "flex", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>
                 <button onClick={() => navigate("/employees")} style={navBtn}>Employee List</button>
                 <button onClick={() => navigate("/leave-types")} style={navBtn}>Leave Types</button>
-                <button onClick={() => navigate("/leave-records")} style={navBtn}>Leave Records</button>
+                <button onClick={() => navigate("/leave-records")} style={navBtn}>Leave Transactions</button>
                 <button onClick={() => navigate("/all-leave-applications")} style={navBtn}>All Applications</button>
                 <button onClick={() => navigate("/attendance-logs")} style={navBtn}>Attendance Logs</button>
                 <button onClick={() => navigate("/overtime-records")} style={navBtn}>Overtime and Undertime Records</button>

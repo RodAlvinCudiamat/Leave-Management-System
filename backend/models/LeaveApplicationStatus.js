@@ -44,7 +44,6 @@ class LeaveApplicationStatus {
 
         return response_data;
     }
-
 }
 
 export default LeaveApplicationStatus;

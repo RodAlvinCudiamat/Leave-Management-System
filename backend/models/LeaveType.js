@@ -6,37 +6,7 @@ import { IS_ACTIVE } from '../config/constants.js';
  * LeaveType model for managing different types of leaves.
  */
 class LeaveType {
-    /**
-     * Constructor for the LeaveType class.
-     *
-     * @constructor
-     * @param {number|null} id - The unique ID of the leave type (null for new records).
-     * @param {string} leave_type_code - The code representing the leave type.
-     * @param {string} leave_type - The name of the leave type.
-     * @param {string} datetime_unit - The unit of time for the leave type (e.g., days, hours).
-     * @param {string} earn_method - The method by which the leave is earned (e.g., monthly, yearly).
-     * @param {number} earn_rate_per_month - The rate at which leave is earned per month.
-     * @param {number} annual_grant_amount - The amount of leave granted annually.
-     * @param {boolean} carryover_allowed - Indicates if carryover is allowed for the leave type.
-     * @param {number} notice_days - The number of days of notice required for leave.
-     * @param {boolean} file_upon_return - Indicates if a file is required upon return for the leave type.
-     * @param {boolean} requires_approval - Indicates if approval is required for the leave type.
-     */
-    constructor(id, leave_type_code, leave_type, datetime_unit, earn_method, earn_rate_per_month, annual_grant_amount, carryover_allowed, notice_days, file_upon_return, requires_approval) {
-        this.id = id;
-        this.leave_type_code = leave_type_code;
-        this.leave_type = leave_type;
-        this.datetime_unit = datetime_unit;
-        this.earn_method = earn_method;
-        this.earn_rate_per_month = earn_rate_per_month;
-        this.annual_grant_amount = annual_grant_amount;
-        this.carryover_allowed = carryover_allowed;
-        this.notice_days = notice_days;
-        this.file_upon_return = file_upon_return;
-        this.requires_approval = requires_approval;
-    }
-
-    /**
+     /**
      * Fetch all leave types.
      * Retrieves all leave type records from the database.
      * 
@@ -72,7 +42,8 @@ class LeaveType {
                 LEFT JOIN leave_type_time_units AS time_unit ON leave_type.leave_type_time_unit_id = time_unit.id
                 WHERE leave_type.is_active = ?
                 ORDER BY leave_type.id ASC
-                `, [IS_ACTIVE.TRUE]);
+                `, [IS_ACTIVE.TRUE]
+            );
 
             if(leave_types.length){
                 response_data.status = true;
@@ -105,11 +76,7 @@ class LeaveType {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [leave_type] = await pool.query(`
-                SELECT * 
-                FROM leave_types 
-                WHERE id = ? LIMIT 1
-                `, [id]);
+            const [leave_type] = await pool.query(`SELECT * FROM leave_types WHERE id = ? LIMIT 1`, [id]);
 
             if(leave_type.length){
                 response_data.status = true;
@@ -167,14 +134,19 @@ class LeaveType {
                 UPDATE leave_types 
                 SET ${fields.join(", ")} 
                 WHERE id = ? LIMIT 1
-                `;
+            `;
 
             values.push(id);
 
             const [update_leave_type] = await pool.query(update_leave_type_query, values);
 
-            response_data.status = (!!update_leave_type.affectedRows);
-            response_data.result = update_leave_type;
+            if(update_leave_type.affectedRows){
+                response_data.status = true;
+                response_data.result = { id, ...data };
+            }
+            else{
+                response_data.error = 'Failed to update leave type';
+            }
         } 
         catch(error){
             response_data.error = error.message;
@@ -200,9 +172,10 @@ class LeaveType {
         try{
             const [delete_leave_type] = await pool.query(`
                 UPDATE leave_types 
-                SET is_active = 0 
+                SET is_active = ? 
                 WHERE id = ? LIMIT 1
-                `, [id]);
+                `, [IS_ACTIVE.FALSE, id]
+            );
 
             if(delete_leave_type.affectedRows){
                 response_data.status = true;

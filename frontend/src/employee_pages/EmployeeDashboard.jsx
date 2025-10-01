@@ -39,7 +39,7 @@ export default function EmployeeDashboard() {
                 const res = await api.get("/attendance_logs/attendance/status/me");
 
                 if(res.data.success){
-                    setIsTimedIn(res.data.result.isTimedIn);
+                    setIsTimedIn(res.data.result.is_timed_in);
                 }
                 else{
                     console.error("Failed to load attendance status:", res.data.error);

@@ -1,12 +1,12 @@
-import { insertLeaveApplication, fetchLeaveApplicationById, fetchLeaveApplicationByEmployeeId, updateLeaveApplication, fetchAllLeaveApplications} from "../controllers/leaveApplicationsController.js";
+import LeaveApplications from "../controllers/LeaveApplications.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/applications", fetchAllLeaveApplications);
-router.put("/application/update/:id", updateLeaveApplication);
-router.get("/application/:id", fetchLeaveApplicationById);
-router.get("/application/employee/:employee_id", fetchLeaveApplicationByEmployeeId);
-router.post("/application/create", insertLeaveApplication);
+router.get("/applications/employees", LeaveApplications.fetchAllLeaveApplications);
+router.get("/applications/employee/:employee_id", LeaveApplications.fetchAllLeaveApplications);
+router.put("/application/update/:id", LeaveApplications.updateLeaveApplication);
+router.get("/application/:id", LeaveApplications.fetchLeaveApplicationById);
+router.post("/application/create", LeaveApplications.insertLeaveApplication);
 
 export default router;

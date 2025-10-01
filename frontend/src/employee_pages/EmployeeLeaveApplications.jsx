@@ -23,7 +23,7 @@ export default function EmployeeLeaveApplications() {
                     return;
                 }
 
-                const res = await api.get(`/leave_applications/application/employee/${employee_id}`);
+                const res = await api.get(`/leave_applications/applications/employee/${employee_id}`);
 
                 if(res.data.success){
                     setLeaveApplications(res.data.result);

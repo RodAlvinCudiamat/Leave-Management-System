@@ -1,8 +1,8 @@
-import { fetchAllRoles } from "../controllers/rolesController.js";
+import Roles from "../controllers/Roles.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/", fetchAllRoles);
+router.get("/", Roles.fetchAllRoles);
 
 export default router;

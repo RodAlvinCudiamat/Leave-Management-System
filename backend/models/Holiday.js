@@ -6,19 +6,6 @@ import { pool } from './db.js';
  */
 class Holiday {
     /**
-     * Constructor for the Holiday class.
-     *
-     * @constructor
-     * @param {string} date - The date of the holiday (YYYY-MM-DD).
-     * @param {boolean} is_holiday - Whether the date is a holiday.
-     * @param {boolean} is_workday - Whether the date is a workday.
-     */
-    constructor(date, is_holiday, is_workday){
-        this.date = date;
-        this.is_holiday = is_holiday;
-        this.is_workday = is_workday;
-    }
-    /**
      * Fetch all holidays between two dates.
      * 
      * @static
@@ -30,16 +17,11 @@ class Holiday {
      * @author Rod
      * @lastupdated September 26, 2025
      */
-    static async fetchHolidays( start_date, end_date){
+    static async fetchHolidays(start_date, end_date){
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [holidays] = await pool.query(`
-                SELECT holiday_date 
-                FROM holidays 
-                WHERE holiday_date BETWEEN ? AND ?
-                `, [start_date, end_date]
-            );
+            const [holidays] = await pool.query(`SELECT dateFROM holidays WHERE date BETWEEN ? AND ?`, [start_date, end_date]);
             
             /* Format dates to YYYY-MM-DD */
             const holiday_dates = holidays.map(holiday => holiday.holiday_date.toISOString().split('T')[0]);

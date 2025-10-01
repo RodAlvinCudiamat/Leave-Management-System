@@ -67,3 +67,5 @@ export const REGULAR_WORK_HOURS = 8;
 
 export const MILLISECONDS_PER_DAY = (1000 * 60 * 60 * 24);
 export const MILLISECONDS_PER_HOUR = (1000 * 60 * 60);
+
+export const DEFAULT_LEAVE_RECORD_VALUE = 0;

@@ -1,8 +1,8 @@
-import { fetchAllDepartments } from "../controllers/departmentsController.js";
+import Departments from "../controllers/Departments.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/", fetchAllDepartments);
+router.get("/", Departments.fetchAllDepartments);
 
 export default router;

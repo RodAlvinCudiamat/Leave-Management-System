@@ -19,10 +19,7 @@ class LeaveTypeTimeUnit {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [leave_type_time_units] = await pool.query(`
-                SELECT * 
-                FROM leave_type_time_units`
-            );
+            const [leave_type_time_units] = await pool.query(`SELECT * FROM leave_type_time_units`);
 
             if(leave_type_time_units.length){
                 response_data.status = true;

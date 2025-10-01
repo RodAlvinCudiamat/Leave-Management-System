@@ -15,22 +15,23 @@ export function validateLeaveDates(leave_type, start_date, end_date, today = new
     const start = new Date(start_date);
     const end = new Date(end_date);
 
-    if (leave_type.name.toLowerCase() === "sick leave") {
-        if (start > today || end > today) {
-            return {
+    if(leave_type.name.toLowerCase() === "sick leave"){
+        if(start > today || end > today){
+            return{
                 status: false,
                 error: "Sick Leave cannot be filed for future dates."
             };
         }
-    } else {
-        if (end < today) {
-            return {
+    } 
+    else{
+        if(end < today){
+            return{
                 status: false,
                 error: `${leave_type.name} cannot be filed for past dates.`
             };
         }
-        if (end < start) {
-            return { status: false, error: "End date cannot be earlier than start date." };
+        if(end < start){
+            return{ status: false, error: "End date cannot be earlier than start date." };
         }
     }
 

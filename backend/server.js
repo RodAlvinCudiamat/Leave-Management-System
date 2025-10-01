@@ -19,7 +19,7 @@ import roleRoutes from './routes/roleRoutes.js';
 import leaveGrantRequestRoutes from './routes/leaveGrantRequestRoutes.js';
 import attendanceLogExceptionRoutes from './routes/attendanceLogExceptionRoutes.js';
 import leaveTypeTimeUnitRoutes from './routes/leaveTypeTimeUnitRoutes.js';
-import leaveTypeGrantBasisRoutes from './routes/leaveTypeGrantBasisRoutes.js';
+import leaveTypeGrantBasesRoutes from './routes/leaveTypeGrantBasesRoutes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -62,7 +62,7 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/leave_grant_requests', leaveGrantRequestRoutes);
 app.use('/api/attendance_log_exceptions', attendanceLogExceptionRoutes);
 app.use('/api/leave_type_time_units', leaveTypeTimeUnitRoutes);
-app.use('/api/leave_type_grant_basis', leaveTypeGrantBasisRoutes);
+app.use('/api/leave_type_grant_basis', leaveTypeGrantBasesRoutes);
 
 app.get('/', (req, res) => {
     res.json({ success: true });

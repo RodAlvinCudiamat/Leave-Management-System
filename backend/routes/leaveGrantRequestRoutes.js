@@ -1,10 +1,10 @@
-import { insertLeaveGrantRequest, fetchAllLeaveGrantRequests, updateLeaveGrantRequest } from "../controllers/leaveGrantRequestsController.js";
+import LeaveGrantRequests from "../controllers/LeaveGrantRequests.js";
 import express from "express";
 
 const router = express.Router();
 
-router.post("/create", insertLeaveGrantRequest);
-router.get("/", fetchAllLeaveGrantRequests);
-router.put("/update/:id", updateLeaveGrantRequest);
+router.post("/create", LeaveGrantRequests.insertLeaveGrantRequest);
+router.get("/", LeaveGrantRequests.fetchAllLeaveGrantRequests);
+router.put("/update/:id", LeaveGrantRequests.updateLeaveGrantRequest);
 
 export default router;

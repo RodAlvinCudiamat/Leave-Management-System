@@ -1,11 +1,11 @@
-import { fetchAllLeaveTypes, fetchLeaveTypeById, updateLeaveType, deleteLeaveType } from "../controllers/leaveTypesController.js";
+import LeaveTypes from "../controllers/LeaveTypes.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/", fetchAllLeaveTypes);
-router.get("/:id", fetchLeaveTypeById);
-router.put("/update/:id", updateLeaveType);
-router.delete("/delete/:id", deleteLeaveType);
+router.get("/", LeaveTypes.fetchAllLeaveTypes);
+router.get("/:id", LeaveTypes.fetchLeaveTypeById);
+router.put("/update/:id", LeaveTypes.updateLeaveType);
+router.delete("/delete/:id", LeaveTypes.deleteLeaveType);
 
 export default router;

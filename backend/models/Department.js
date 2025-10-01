@@ -6,18 +6,6 @@ import { pool } from './db.js';
  */
 class Department {
     /**
-     * Constructor for the Department class.
-     *
-     * @constructor
-     * @param {number|null} id - The unique ID of the department (null for new records).
-     * @param {string|null} name - The name of the department.
-     */
-    constructor(id = null, name = null) {
-        this.id = id;
-        this.name = name;
-    }
-
-    /**
      * Fetch all departments.
      * Retrieves all department records from the database.
      * 
@@ -33,10 +21,7 @@ class Department {
 
         try{
             /* Query all rows from the departments table */
-            const [departments] = await pool.query(`
-                SELECT * 
-                FROM employee_departments
-            `);
+            const [departments] = await pool.query(`SELECT *  FROM employee_departments`);
 
             if(departments.length){
                 response_data.status = true;

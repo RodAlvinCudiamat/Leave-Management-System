@@ -6,39 +6,27 @@ import { pool } from "./db.js";
  */
 class LeaveGrantRequest {
     /**
-     * Constructor for the LeaveGrantRequest class.
+     * Static helper for quick insert
      * 
-     * @constructor
-     * @param {number|null} id - The unique ID of the leave grant request (null for new records).
+     * @static
+     * @async
+     * @method insertLeaveGrantRequest
      * @param {number} employee_id - The ID of the employee requesting leave.
      * @param {number} leave_type_id - The ID of the leave type being requested.
      * @param {number} leave_application_status_id - The ID of the current status of the leave application.
-     */
-    constructor(id, employee_id, leave_type_id, leave_application_status_id) {
-        this.id = id;
-        this.employee_id = employee_id;
-        this.leave_type_id = leave_type_id;
-        this.leave_application_status_id = leave_application_status_id;
-    }
-    
-    /**
-     * Insert a new leave grant request into the database.
-     * 
-     * @async
-     * @method insert
      * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
      * @author Rod
-     * @lastupdated September 26, 2025
+     * @lastupdated September 28, 2025
      */
-    async insert() {
+    static async insertLeaveGrantRequest(employee_id, leave_type_id, leave_application_status_id) {
         const response_data = { status: false, result: null, error: null };
 
         try{
             const [insert_leave_grant_request] = await pool.query(`
                 INSERT INTO leave_grant_requests
-                (employee_id, leave_type_id, leave_application_status_id, requested_at, created_at, updated_at)
+                    (employee_id, leave_type_id, leave_application_status_id, requested_at, created_at, updated_at)
                 VALUES (?, ?, ?, NOW(), NOW(), NOW())
-            `, [this.employee_id, this.leave_type_id, this.leave_application_status_id]);
+            `, [employee_id, leave_type_id, leave_application_status_id]);
 
             if(insert_leave_grant_request.affectedRows > 0){
                 response_data.status = true;
@@ -53,23 +41,6 @@ class LeaveGrantRequest {
         }
 
         return response_data;
-    }
-    /**
-     * Static helper for quick insert
-     * 
-     * @static
-     * @async
-     * @method insertLeaveGrantRequest
-     * @param {number} employee_id - The ID of the employee requesting leave.
-     * @param {number} leave_type_id - The ID of the leave type being requested.
-     * @param {number} leave_application_status_id - The ID of the current status of the leave application.
-     * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
-     * @author Rod
-     * @lastupdated September 26, 2025
-     */
-    static async insertLeaveGrantRequest(employee_id, leave_type_id, leave_application_status_id) {
-        const leave_grant_request = new LeaveGrantRequest(null, employee_id, leave_type_id, leave_application_status_id, null, null);
-        return await leave_grant_request.insert();
     }
 
     /**
@@ -88,8 +59,7 @@ class LeaveGrantRequest {
 
         try{
             const [leave_grant_requests] = await pool.query(`
-                 SELECT 
-                    grant_request.id AS leave_grant_request_id,
+                SELECT grant_request.id AS leave_grant_request_id,
                     (CONCAT(employee.first_name, ' ', employee.last_name)) AS employee_name,
                     leave_type.name AS leave_type_name,
                     leave_status.name AS leave_application_status_name,
@@ -169,8 +139,8 @@ class LeaveGrantRequest {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [fetch_grant_request] = await conn.query(
-                `SELECT id AS leave_grant_request_id, 
+            const [fetch_grant_request] = await conn.query(`
+                SELECT id AS leave_grant_request_id, 
                     employee_id, 
                     leave_application_status_id, 
                     leave_type_id

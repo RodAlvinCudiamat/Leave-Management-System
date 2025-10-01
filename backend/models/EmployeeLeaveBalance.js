@@ -1,5 +1,5 @@
 import {pool} from './db.js';
-import { LEAVE_TYPE_IDS, MONTHLY_ACCRUAL_RATE, OVERTIME_MULTIPLIER, LEAVE_TYPE_GRANT_BASIS, IS_ACTIVE } from '../config/constants.js';
+import { LEAVE_TYPE_IDS, MONTHLY_ACCRUAL_RATE, OVERTIME_MULTIPLIER, LEAVE_TYPE_GRANT_BASIS, IS_ACTIVE, DEFAULT_LEAVE_RECORD_VALUE } from '../config/constants.js';
 
 /**
  * @class EmployeeLeaveBalance
@@ -7,34 +7,64 @@ import { LEAVE_TYPE_IDS, MONTHLY_ACCRUAL_RATE, OVERTIME_MULTIPLIER, LEAVE_TYPE_G
  */
 class EmployeeLeaveBalance {
     /**
-     * Creates a new EmployeeLeaveBalance instance.
-     *
-     * @constructor
-     * @param {number} employee_id - The ID of the employee.
-     * @param {number} leave_type_id - The ID of the leave type.
-     * @param {number} starting_credit - The starting credit for the leave type.
-     * @param {number} earned - The number of earned leave days.
-     * @param {number} used - The number of used leave days.
-     * @param {number} deducted - The number of deducted leave days.
-     * @param {number} carry_in - The number of carry-in leave days.
-     * @param {number} remaining_credit - The remaining credit for the leave type.
-     * @param {number} year - The year associated with the leave balance.
+     * Insert initial leave balances for an employee for a given year.
+     * 
+     * @static
+     * @async
+     * @method insertEmployeeLeaveBalance
+     * @param {number} employee_id - Employee ID
+     * @param {number} leave_type_id - Leave type ID
+     * @param {number} starting_credit - Initial opening balance
+     * @param {number} year - Year of the leave balance
+     * @param {import("mysql2/promise").PoolConnection|import("mysql2/promise").Pool} [conn=pool] - Database connection or pool.
+     * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
+     * @author Rod
+     * @lastupdated September 28, 2025
      */
-    constructor(employee_id, leave_type_id, starting_credit, earned, used, deducted, carry_in, remaining_credit, year) {
-        this.employee_id = employee_id;
-        this.leave_type_id = leave_type_id;
-        this.starting_credit = starting_credit;
-        this.earned = earned;
-        this.used = used;
-        this.deducted = deducted;
-        this.carry_in = carry_in;
-        this.remaining_credit = remaining_credit;
-        this.year = year;
+    static async insertEmployeeLeaveBalance(employee_id, leave_types, year, conn = pool) {
+        const response_data = { status: false, result: null, error: null };
+
+        try {
+            if(!Array.isArray(leave_types) || leave_types.length === 0){
+                response_data.error = "No leave types provided for insertion";
+            }
+            
+            const now = new Date();
+
+            const values = leave_types.map(leave_type => [
+                employee_id,
+                leave_type.id,
+                leave_type.credit,
+                leave_type.credit,
+                year, 
+                now,
+                now
+            ]);
+
+            const [grant_leave] = await conn.query(`
+                INSERT INTO employee_leave_balances
+                    (employee_id, leave_type_id, starting_credit, remaining_credit, year, created_at, updated_at)
+                VALUES ?
+            `, [values]);
+
+            if(grant_leave.affectedRows){
+                response_data.status = true;
+                response_data.result = { inserted: grant_leave.affectedRows };
+            } 
+            else{
+                response_data.error = "Failed to grant leave types";
+            }
+        } 
+        catch(error){
+            response_data.error = error.message;
+        }
+
+        return response_data;
     }
 
     /**
      * Update an employee's leave balance upon approval.
-     * Deducts (use) or adds (earn) leave days depending on record type.
+     * Deducts used leave and updates remaining credit.
      * 
      * @static
      * @async
@@ -142,7 +172,7 @@ class EmployeeLeaveBalance {
         try{
             const [undertime_leave_balance] = await conn.query(`
                 UPDATE employee_leave_balances
-                SET used = used + ?, 
+                SET deducted = deducted + ?, 
                     remaining_credit = remaining_credit - ?, 
                     updated_at = NOW()
                 WHERE employee_id = ? AND leave_type_id = ?
@@ -222,15 +252,14 @@ class EmployeeLeaveBalance {
         try{
             const [leave_balance] = await pool.query( `
                 UPDATE employee_leave_balances 
-                SET 
-                    carry_in = remaining_credit,
+                SET carry_in = remaining_credit,
                     remaining_credit = starting_credit + carry_in,
                     earned = ?,
                     used = ?,
                     deducted = ?,
                     updated_at = NOW()
                 WHERE leave_type_id IN (?, ?);
-                `, [ 0, 0, 0, LEAVE_TYPE_IDS.VACATION_LEAVE, LEAVE_TYPE_IDS.SICK_LEAVE ]
+                `, [ DEFAULT_LEAVE_RECORD_VALUE, DEFAULT_LEAVE_RECORD_VALUE, DEFAULT_LEAVE_RECORD_VALUE, LEAVE_TYPE_IDS.VACATION_LEAVE, LEAVE_TYPE_IDS.SICK_LEAVE ]
             );
 
             if(leave_balance.affectedRows){
@@ -280,7 +309,7 @@ class EmployeeLeaveBalance {
                 LEFT JOIN leave_types ON leave_balance.leave_type_id = leave_types.id
                 LEFT JOIN leave_type_time_units AS time_unit ON leave_types.leave_type_time_unit_id = time_unit.id
                 WHERE leave_balance.employee_id = ?
-                `, [employee_id]);
+            `, [employee_id]);
             
             if(leave_balance.length) {
                 response_data.status = true;
@@ -356,13 +385,14 @@ class EmployeeLeaveBalance {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            const [existing] = await conn.query(`
+
+            const [granted_leave] = await conn.query(`
                 SELECT id FROM employee_leave_balances 
                 WHERE employee_id = ? AND leave_type_id = ? AND year = ?
                 `, [employee_id, leave_type_id, year]
             );
 
-            if(existing.length){
+            if(granted_leave.length){
                 response_data.status = true; 
             } 
             else{
@@ -377,68 +407,50 @@ class EmployeeLeaveBalance {
     }
 
     /**
-     * Insert a new employee leave balance for a given leave type and year.
-     * Initializes earned, used, adjusted, and carry-in as 0.
-     * 
+     * Fetch leave types that have not yet been granted to an employee for a given year.
+     *  
+     * @static
      * @async
-     * @method insertBalance
+     * @method fetchNotGrantedLeaveTypes
      * @param {number} employee_id - Employee ID
-     * @param {number} leave_type_id - Leave type ID
-     * @param {number} starting_credit - Initial opening balance
-     * @param {number} year - Year of the leave balance
+     * @param {number[]} leave_type_ids - Array of leave type IDs
+     * @param {number} year - Year to check
      * @param {import("mysql2/promise").PoolConnection|import("mysql2/promise").Pool} [conn=pool] - Database connection or pool.
      * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
      * @author Rod
-     * @lastupdated September 26, 2025
+     * @lastupdated September 28, 2025  
      */
-    async insertBalance(conn = pool){
+    static async fetchNotGrantedLeaveTypes(employee_id, leave_type_ids, year, conn = pool) {
         const response_data = { status: false, result: null, error: null };
 
         try{
-            /* Insert new leave balance */
-            const [grant_leave] = await conn.query(`
-                INSERT INTO employee_leave_balances
-                    (employee_id, leave_type_id, starting_credit, remaining_credit, year, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-            `, [this.employee_id, this.leave_type_id, this.starting_credit, this.starting_credit, this.year]
+            if(!Array.isArray(leave_type_ids) || leave_type_ids.length === 0){
+                response_data.error = "No leave type IDs provided";
+            }
+
+            /* Fetch already granted leave types in one query */
+            const [ungranted_leave] = await conn.query(`
+                SELECT leave_type_id 
+                FROM employee_leave_balances 
+                WHERE employee_id = ? 
+                AND year = ?
+                AND leave_type_id IN (?)
+                `, [employee_id, year, leave_type_ids]
             );
 
-            if(grant_leave.affectedRows){
-                response_data.status = true;
-                response_data.result = {
-                    insertId: grant_leave.insertId,
-                    affectedRows: grant_leave.affectedRows
-                };
-            }
-            else{
-                response_data.error = "Failed to grant leave type";
-            }
-        }
+            const granted_ids = ungranted_leave.map(row => row.leave_type_id);
+
+            /* Keep only not-yet-granted leave type IDs */
+            const not_granted = leave_type_ids.filter(id => !granted_ids.includes(id));
+
+            response_data.status = true;
+            response_data.result = not_granted;
+        } 
         catch(error){
             response_data.error = error.message;
         }
 
         return response_data;
-    }
-
-    /**
-     * Static helper to quickly insert a new leave balance record.
-     * 
-     * @static
-     * @async
-     * @method insertEmployeeLeaveBalance
-     * @param {number} employee_id - Employee ID
-     * @param {number} leave_type_id - Leave type ID
-     * @param {number} starting_credit - Initial opening balance
-     * @param {number} year - Year of the leave balance
-     * @param {import("mysql2/promise").PoolConnection|import("mysql2/promise").Pool} [conn=pool] - Database connection or pool.
-     * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
-     * @author Rod
-     * @lastupdated September 26, 2025
-     */
-    static async insertEmployeeLeaveBalance(employee_id, leave_type_id, starting_credit, year, conn = pool){
-        const leave_balance = new EmployeeLeaveBalance(employee_id, leave_type_id, starting_credit, 0, 0, 0, 0, starting_credit, year);
-        return await leave_balance.insertBalance(conn);
     }
 
     /**
@@ -537,7 +549,7 @@ class EmployeeLeaveBalance {
                 SELECT id, credit
                 FROM leave_types 
                 WHERE id = ? AND leave_type_grant_basis_id = ?
-            `, [leave_type_id, LEAVE_TYPE_GRANT_BASIS.SPECIAL]
+                `, [leave_type_id, LEAVE_TYPE_GRANT_BASIS.SPECIAL]
             );
 
             if(leave_type.length === 0){

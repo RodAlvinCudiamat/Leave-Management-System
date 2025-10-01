@@ -1,8 +1,8 @@
-import { fetchAllLeaveTypeTimeUnits } from "../controllers/leaveTypeTimeUnitsController.js";
+import LeaveTypeTimeUnits from "../controllers/LeaveTypeTimeUnits.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/", fetchAllLeaveTypeTimeUnits);
+router.get("/", LeaveTypeTimeUnits.fetchAllLeaveTypeTimeUnits);
 
 export default router;

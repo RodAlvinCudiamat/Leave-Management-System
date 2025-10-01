@@ -6,51 +6,37 @@ import { pool } from './db.js';
  */
 class AttendanceLog {
     /**
-     * Creates a new AttendanceLog instance.
-     * 
-     * @constructor
-     * @param {number} employee_id - The ID of the employee.
-     * @param {string|Date} time_in - The time the employee clocked in.
-     * @param {string|Date} date - The date of the attendance log.
-     * @param {string|Date|null} time_out - The time the employee clocked out (null if not yet clocked out).
-     * @param {number|null} id - The unique ID of the attendance log (null for new records).
-     */
-    constructor(employee_id, time_in, date, time_out = null, id = null) {
-        this.id = id;
-        this.employee_id = employee_id;
-        this.time_in = time_in;
-        this.time_out = time_out;
-        this.date = date;
-    }
-
-    /**
      * Insert a new time-in record.
      * 
+     * @static
      * @async
      * @method timeIn
+     * @param {number} employee_id - The ID of the employee.
+     * @param {string|Date} time_in - The time the employee clocked in.
+     * @param {string|Date|null} [date=null] - The date of the log (defaults to today if null).
      * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
      * @author Rod
-     * @lastupdated September 25, 2025
+     * @lastupdated September 28, 2025
      */
-    async timeIn(){
+    static async insertAttendanceLog(employee_id, time_in, date = null) {
         const response_data = { status: false, result: null, error: null };
 
-        try{
-            const date = this.date ?? new Date().toISOString().split("T")[0];
-            
+        try {
+            const log_date = date ?? new Date().toISOString().split("T")[0];
+
             const [insert_time_in] = await pool.query(`
-                INSERT INTO attendance_logs (employee_id, time_in, time_out, date, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, NOW(), NOW())
-                `, [this.employee_id, this.time_in, null, date]
+                INSERT INTO attendance_logs 
+                    (employee_id, time_in, time_out, date, created_at, updated_at)
+                VALUES (?, ?, NULL, ?, NOW(), NOW())
+                `, [employee_id, time_in, log_date]
             );
 
             if(insert_time_in.affectedRows){
                 response_data.status = true;
                 response_data.result = { log_id: insert_time_in.insertId };
-                this.id = insert_time_in.insertId;
             } 
             else{
-                response_data.error = 'Failed to insert time-in';
+                response_data.error = "Failed to insert time-in";
             }
         } 
         catch(err){
@@ -58,24 +44,6 @@ class AttendanceLog {
         }
 
         return response_data;
-    }
-
-    /**
-     * Static factory for inserting time-in.
-     * 
-     * @static
-     * @async
-     * @method insertAttendaceLog
-     * @param {object} param - Object containing employee_id and time_in.
-     * @param {number} employee_id - Employee ID.
-     * @param {string|Date} time_in - Time-in value.
-     * @returns {Promise<{status: boolean, result: object|null, error: string|null}>}
-     * @author Rod
-     * @lastupdated September 25, 2025
-     */
-    static async insertAttendaceLog({ employee_id, time_in }){
-        const log = new AttendanceLog(employee_id, time_in);
-        return await log.timeIn();
     }
 
     /**
@@ -107,7 +75,6 @@ class AttendanceLog {
             if(update_time_out.affectedRows){
                 response_data.status = true;
                 response_data.result = { log_id };
-                this.time_out = time_out;
             } 
             else{
                 response_data.error = 'Failed to update time-out';
@@ -148,7 +115,7 @@ class AttendanceLog {
                 WHERE YEAR(attendance.time_in) = ? 
                 AND MONTH(attendance.time_in) = ?
                 ORDER BY attendance.id DESC
-                 `,[year, month]
+                `,[year, month]
             );
 
             if(monthly_log.length){
@@ -196,14 +163,13 @@ class AttendanceLog {
                 const log = attendance_status[0];
                 response_data.status = true;
                 response_data.result = {
-                    isTimedIn: !!log.time_in && !log.time_out,
+                    is_timed_in: !!log.time_in && !log.time_out,
                     log_id: log.id,
                     time_in: log.time_in
                 };
             } 
             else{
-                response_data.status = true;
-                response_data.result = { isTimedIn: false, log_id: null, time_in: null };
+                response_data.result = { is_timed_in: false, log_id: null, time_in: null };
             }
         } 
         catch(err){

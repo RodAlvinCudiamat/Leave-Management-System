@@ -14,7 +14,7 @@ export default function LeaveApplicationsPage() {
     useEffect(() => {
         const fetchLeaveApplications = async () => {
             try{
-                const res = await api.get("/leave_applications/applications");
+                const res = await api.get(`/leave_applications/applications/employees`); 
 
                 if(res.data.success){
                     if(res.data.result.length > 0){

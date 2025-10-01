@@ -1,8 +1,8 @@
-import { fetchAllPositions } from "../controllers/positionsController.js";
+import Positions from "../controllers/Positions.js";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/", fetchAllPositions);
+router.get("/", Positions.fetchAllPositions);
 
 export default router;

@@ -53,6 +53,8 @@ export default function Login() {
                 <h1 style={{ textAlign: "center", marginBottom: "1rem", color: "#4ade80" }}>
                     Leave Management System
                 </h1>
+                {message && <p style={{ color: "#f5f5f5", marginBottom: "1rem" }}>{message}</p>}
+                
                 <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Login</h2>
                 <form onSubmit={handleLogin}>
                     <label style={{ display: "block", marginBottom: "0.5rem" }}>Email</label>
